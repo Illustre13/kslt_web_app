@@ -16,7 +16,7 @@ from flask_login import (
     logout_user
 )
 
-from flask_dance.contrib.github import github
+# from flask_dance.contrib.github import github
 
 from apps import db, login_manager
 from apps.authentication import blueprint
@@ -34,14 +34,14 @@ def route_default():
 
 # Login & Registration
 
-@blueprint.route("/github")
-def login_github():
-    """ Github login """
-    if not github.authorized:
-        return redirect(url_for("github.login"))
+# @blueprint.route("/github")
+# def login_github():
+#     """ Github login """
+#     if not github.authorized:
+#         return redirect(url_for("github.login"))
 
-    res = github.get("/user")
-    return redirect(url_for('home_blueprint.index'))
+#     res = github.get("/user")
+#     return redirect(url_for('home_blueprint.index'))
 
 @blueprint.route('/login', methods=['GET', 'POST'])
 def login():

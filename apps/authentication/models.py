@@ -6,7 +6,7 @@ Copyright (c) 2019 - present AppSeed.us
 from flask_login import UserMixin
 
 from sqlalchemy.orm import relationship
-from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
+# from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 
 from apps import db, login_manager
 
@@ -21,7 +21,7 @@ class Users(db.Model, UserMixin):
     email         = db.Column(db.String(64), unique=True)
     password      = db.Column(db.LargeBinary)
 
-    oauth_github  = db.Column(db.String(100), nullable=True)
+    # oauth_github  = db.Column(db.String(100), nullable=True)
 
     api_token     = db.Column(db.String(100))
     api_token_ts  = db.Column(db.Integer)    
@@ -55,7 +55,7 @@ def request_loader(request):
     user = Users.query.filter_by(username=username).first()
     return user if user else None
 
-class OAuth(OAuthConsumerMixin, db.Model):
-    user_id = db.Column(db.Integer, db.ForeignKey("Users.id", ondelete="cascade"), nullable=False)
-    user = db.relationship(Users)
+# class OAuth(OAuthConsumerMixin, db.Model):
+#     user_id = db.Column(db.Integer, db.ForeignKey("Users.id", ondelete="cascade"), nullable=False)
+#     user = db.relationship(Users)
     

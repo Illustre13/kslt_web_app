@@ -10,7 +10,7 @@ import mediapipe as mp
 from datetime import datetime
 from flask_mysqldb import MySQL
 from apps import create_app, db
-from   flask_minify  import Minify
+# from   flask_minify  import Minify
 from flask_socketio import SocketIO
 from   flask_migrate import Migrate
 from apps.config import config_dict
@@ -116,7 +116,20 @@ def upload_video():
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
-model = load_model(os.path.join('model', 'prototype_weight_final.h5'))
+# model = load_model(os.path.join('model', 'prototype_weight_final.h5'))
+
+from keras.layers import LSTM
+
+def ignore_time_major(**kwargs):
+    kwargs.pop('time_major', None)
+    return LSTM(**kwargs)
+
+model = load_model(
+    os.path.join('new_models', 'RSL Action Detection Script_phase3.h5'),
+    custom_objects={'LSTM': ignore_time_major}
+)
+
+
 mp_holistic = mp.solutions.holistic # Holistic model
 mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 finishLiveTranslation = "False"
@@ -215,13 +228,22 @@ def gen_frames():
         camera.release()
         cv2.destroyAllWindows()
 
-@app.route('/video_feed')
+# @app.route('/video_feed')
+# def video_feed():
+#     global camera
+#     global finishLiveTranslation
+#     finishLiveTranslation = "False"
+#     camera = cv2.VideoCapture(0)
+#     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/video_feed', endpoint='video_feed')
 def video_feed():
     global camera
     global finishLiveTranslation
     finishLiveTranslation = "False"
     camera = cv2.VideoCapture(0)
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/stop_feed')
 def stop_feed():
@@ -345,10 +367,15 @@ def rVideo_feed():
 
 
 
+# @app.route('/uploads/videos/<filename>')
+# def download_video(filename): 
+#     video_path = 'D:/TFOD/ksltwebapp/ksltwebapp/uploads/videos/'+filename
+#     return Response(gen_frames_recorded_videos(video_path), mimetype='multipart/x-mixed-replace; boundary=frame')
 @app.route('/uploads/videos/<filename>')
 def download_video(filename): 
-    video_path = 'D:/TFOD/ksltwebapp/ksltwebapp/uploads/videos/'+filename
-    return Response(gen_frames_recorded_videos(video_path), mimetype='multipart/x-mixed-replace; boundary=frame')
+    video_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    return Response(gen_frames_recorded_videos(video_path),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route('/get_rSentence')
@@ -371,8 +398,8 @@ def get_recorded_translation_status():
 
 ##################################************************#######################################
 
-if not DEBUG:
-    Minify(app=app, html=True, js=False, cssless=False)
+# if not DEBUG:
+#     Minify(app=app, html=True, js=False, cssless=False)
     
 if DEBUG:
     app.logger.info('DEBUG            = ' + str(DEBUG)             )

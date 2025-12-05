@@ -64,7 +64,9 @@
               <div class="container">
                 <div class="row">
                   <div class="video-container">
-                    <img id = "video" width="640" height="480" style="display: none;">
+                    <!-- <img id = "video" width="640" height="480" style="display: none;"> -->
+                     <video id="video" width="640" height="480" autoplay playsinline></video>
+
 
                     <div id="loading-overlay" class="overlay">
                       <div class="spinner"></div>
@@ -106,137 +108,72 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
 <script type="text/javascript">
 
-    // Variable Definition
     const video = document.getElementById('video');
     const text = document.getElementById('kinyarwanda_text');
     const translate_button = document.getElementById('translate');
     const clearText_button = document.getElementById('clear_text');
-    var loadingOverlay = document.getElementById('loading-overlay');
-
-
-      video.style.display='none';
-
-    // Define variable for video state
-    let videoState = false;
-
-
-    // Releasing the camera on refresh
-    video.src="";
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', '/stop_feed');
-    xhr.send();
-
-    // Add event listener to buttons
-    translate_button.addEventListener('click', toggleVideo);
-
-    // Add event listener to clear text button
-    clearText_button.addEventListener('click', clearText);
-
-    // Stop the loading once the feed started to be received
-    video.addEventListener('load', function() {
-      loadingOverlay.style.display = 'none';
-      updateSentence();
-    });
-
-        
-    // Turn on the video and began to translate
-    function toggleVideo() {
-
-      // Toggle video state
-      videoState = !videoState;
-
-      // If video is running, start it and show video element
-      if (videoState) {
-        
-        var xhr = new XMLHttpRequest();
-			  xhr.open('GET', '/video_feed');
-			  xhr.send();
-        video.style.display='block'; 
-        loadingOverlay.style.display = 'block';
-        video.src = "{{ url_for('video_feed') }}?rand=" + Math.random();
-        translate_button.innerHTML= '<i class="fas fa-solid fa-hands"></i>&nbsp;&nbsp;Stop'; // Update button text to "Stop" 
-      }
-      // If video is stopped, stop it and hide video element
-      else {
-        video.src="";
-        var xhr = new XMLHttpRequest();
-			  xhr.open('GET', '/stop_feed');
-			  xhr.send();
-        video.style.display = 'none';
-        translate_button.innerHTML= '<i class="fas fa-regular fa-hands"></i>&nbsp;&nbsp;Translate'; // Update button text to "Start"
-
-      }
-    }
-
+    let streamingInterval = null;
     let wordcount = 0;
 
- 
-    let sentenceIntervalId = null;
+    // Ask browser for webcam access
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => { video.srcObject = stream; })
+    .catch(err => { console.error("Camera access denied:", err); });
 
-    function updateSentence() {
+    // Toggle gesture translation
+    translate_button.addEventListener('click', () => {
+      if (!streamingInterval) {
+        streamingInterval = setInterval(captureFrame, 150);
+        translate_button.innerHTML = '<i class="fas fa-solid fa-hands"></i>&nbsp;&nbsp;Stop';
+      } else {
+        clearInterval(streamingInterval);
+        streamingInterval = null;
+        translate_button.innerHTML = '<i class="fas fa-regular fa-hands"></i>&nbsp;&nbsp;Translate';
+      }
+    });
 
-      clearInterval(sentenceIntervalId);
+    // Capture & send frame to backend
+    function captureFrame() {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
 
-      isTranslationDone()
-      .then(word => {
-        if (word === "True") {
-          clearInterval(sentenceIntervalId);
-        } else {
-          fetch('/get_sentence')
-          .then(response => response.text())
-          .then(data => {
+      canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("frame", blob, "frame.jpg");
 
-            const words = data.split('*');
-
-            if (words.length != wordcount) {
-              // loop through each word and display it on a new line
-              for (let i = wordcount ; i < words.length; i++) {
-                const word = words[i];
-                const wordElement = document.createElement('p');
-                wordElement.textContent = word;
-                text.insertBefore(wordElement, text.firstChild); // append to the div instead of the body
-                wordcount = words.length;
-              }
-            }
-
-            sentenceIntervalId = setInterval(updateSentence, 1000);
-          })
-          .catch(error => {
-            console.error('Error fetching sentence:', error);
-          });
-        }
-      });
+        fetch("/receive_frame", { method: "POST", body: formData });
+      }, "image/jpeg");
     }
 
-
-
-    // Clear Sentence
-    function clearText(){
-        fetch('/clear_sentence', { method: 'POST' })
-          .then(response => {
-            if (response.ok) {
-              text.replaceChildren();
-              // Refresh the displayed sentence
-              updateSentence();
+    // Update text every second
+    function updateSentence() {
+      fetch('/get_sentence')
+        .then(response => response.text())
+        .then(data => {
+          const words = data.split('*');
+          if (words.length !== wordcount) {
+            for (let i = wordcount; i < words.length; i++) {
+              const p = document.createElement('p');
+              p.textContent = words[i];
+              text.insertBefore(p, text.firstChild);
             }
-          })
-          .catch(error => console.error(error));
-      }
+            wordcount = words.length;
+          }
+        });
+    }
+    setInterval(updateSentence, 1000);
 
-      clearText();
+    // Clear text button
+    clearText_button.addEventListener('click', () => {
+      fetch('/clear_sentence', { method: 'POST' })
+        .then(() => {
+          text.replaceChildren();
+          wordcount = 0;
+        });
+    });
 
-    //  Fetching the sentence   
-    function isTranslationDone() {
-          
-          // fetching the sentence only if the video is playing
-          return fetch('/live_translation_status')
-            .then(response => response.text())
-            .then(data => {
-              const status = data.trim(); // trim to remove any leading/trailing whitespace
-              return status; // return the word
-            });
-        }
-    
 
       
 </script>
