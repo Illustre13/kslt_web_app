@@ -33,3 +33,9 @@ apps/static/assets/.temp
 
 migrations
 .env__
+
+
+./new_models/signlang-kinyarwanda/
+/signlang-kinyarwanda/
+
+/Methodology_phase_2_&_3/MP_Data_phase_3/*
