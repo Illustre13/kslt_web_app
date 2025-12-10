@@ -33,3 +33,7 @@ apps/static/assets/.temp
 
 migrations
 .env__
+
+new_models/Logs_CNN_GRU/
+new_models/Logs_External_Data
+

@@ -2,180 +2,167 @@
 
 {% block title %} Live Translation {% endblock title %}
 
-<!-- Specific CSS goes HERE -->
 {% block stylesheets %}
 <style>
-
     .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(255, 255, 255, 0.5);
-      z-index: 100;
-      display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.5);
+        z-index: 100;
+        display: none;
     }
 
     .spinner {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 2s linear infinite;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 2s linear infinite;
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
-    .my_scroll_div{
-      overflow-y: auto;
-      max-height: 480px;
+    .my_scroll_div {
+        overflow-y: auto;
+        max-height: 480px;
     }
-
-  </style>
-
+</style>
 {% endblock stylesheets %}
 
 {% block content %}
-
-    <div class="container-fluid py-4">
-      <div class="row my-4">
+<div class="container-fluid py-4">
+    <div class="row my-4">
         <div class="col-lg-8 col-md-6 mb-md-0 mb-4">
-          <div class="card">
-            <div class="card-header pb-0">
-              <div class="row">
-                <div class="col-lg-6 col-7">
-                  <p>Video feed for Live Translation</p>
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-lg-6 col-7">
+                            <p>Video feed for Live Translation</p>
+                        </div>
+                        <div class="col-lg-6 col-5 my-auto text-end">
+                            <a class="btn bg-gradient-dark mb-0" id="translate" href="javascript:;" style="font-size: 0.75em; padding: 0.25rem 0.5rem;">
+                                <i class="fas fa-regular fa-hands"></i>&nbsp;&nbsp;Translate
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-lg-6 col-5 my-auto text-end">
-                  <a class="btn bg-gradient-dark mb-0" id="translate" href="javascript:;" style="font-size: 0.75em; padding: 0.25rem 0.5rem;"><i class="fas fa-regular fa-hands"></i>&nbsp;&nbsp;Translate</a> 
-                </div>
-              </div>
-            </div>
-            <div class="card-body px-0 pb-2">
-              <div class="container">
-                <div class="row">
-                  <div class="video-container">
-                    <!-- <img id = "video" width="640" height="480" style="display: none;"> -->
-                     <video id="video" width="640" height="480" autoplay playsinline></video>
 
+                <div class="card-body px-0 pb-2">
+                    <div class="container">
+                        <div class="row">
+                            <div class="video-container">
+                                <video id="video" width="640" height="480" autoplay playsinline></video>
+                                <div id="loading-overlay" class="overlay">
+                                    <div class="spinner"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <div id="loading-overlay" class="overlay">
-                      <div class="spinner"></div>
-                    </div>                    
-                </div>
-                 
-                </div>
             </div>
-            </div>
-          </div>
         </div>
+
         <div class="col-lg-4 col-md-6">
-          <div class="card h-100">
-            <div class="card-header pb-0">
-              <div class="row">
-                <div class="col-lg-8 col-7">
-                  <h6>Kinyarwanda Text</h6>
+            <div class="card h-100">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-lg-8 col-7">
+                            <h6>Kinyarwanda Text</h6>
+                        </div>
+                        <div class="col-lg-4 col-5 my-auto text-end">
+                            <a class="btn bg-gradient-dark mb-0" id="clear_text" href="javascript:;" style="font-size: 0.75em; padding: 0.25rem 0.5rem;">
+                                <i class="fas fa-eraser"></i>&nbsp;&nbsp;Clear
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-lg-4 col-5 my-auto text-end">
-                  <a class="btn bg-gradient-dark mb-0" id="clear_text" href="javascript:;" style="font-size: 0.75em; padding: 0.25rem 0.5rem;"><i class="fas fa-eraser" aria-hidden="true"></i>&nbsp;&nbsp;Clear</a>
-                </div>
-              </div>
-            </div>
-            <div class="card-body p-3 my_scroll_div" id="kinyarwanda_text">
-              <!-- <p id="kinyarwanda_text"></p> -->
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {% include "includes/footer.html" %}
+                <div class="card-body p-3 my_scroll_div" id="kinyarwanda_text"></div>
+            </div>
+        </div>
 
     </div>
-
+</div>
+{% include "includes/footer.html" %}
 {% endblock content %}
 
-<!-- Specific JS goes HERE --> 
 {% block javascripts %}
-<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
-<script type="text/javascript">
+<script>
+    const API_URL = "http://127.0.0.1:5000";  // 👈 IMPORTANT
 
     const video = document.getElementById('video');
     const text = document.getElementById('kinyarwanda_text');
     const translate_button = document.getElementById('translate');
     const clearText_button = document.getElementById('clear_text');
+
     let streamingInterval = null;
     let wordcount = 0;
 
-    // Ask browser for webcam access
     navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => { video.srcObject = stream; })
-    .catch(err => { console.error("Camera access denied:", err); });
+        .then(stream => { video.srcObject = stream; })
+        .catch(err => { console.error("Camera access denied:", err); });
 
-    // Toggle gesture translation
     translate_button.addEventListener('click', () => {
-      if (!streamingInterval) {
-        streamingInterval = setInterval(captureFrame, 150);
-        translate_button.innerHTML = '<i class="fas fa-solid fa-hands"></i>&nbsp;&nbsp;Stop';
-      } else {
-        clearInterval(streamingInterval);
-        streamingInterval = null;
-        translate_button.innerHTML = '<i class="fas fa-regular fa-hands"></i>&nbsp;&nbsp;Translate';
-      }
+        if (!streamingInterval) {
+            streamingInterval = setInterval(captureFrame, 300);
+            translate_button.innerHTML = '<i class="fas fa-solid fa-hands"></i>&nbsp;&nbsp;Stop';
+        } else {
+            clearInterval(streamingInterval);
+            streamingInterval = null;
+            translate_button.innerHTML = '<i class="fas fa-regular fa-hands"></i>&nbsp;&nbsp;Translate';
+        }
     });
 
-    // Capture & send frame to backend
     function captureFrame() {
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d").drawImage(video, 0, 0);
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
 
-      canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append("frame", blob, "frame.jpg");
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append("frame", blob, "frame.jpg");
 
-        fetch("/receive_frame", { method: "POST", body: formData });
-      }, "image/jpeg");
+            fetch(`${API_URL}/receive_frame`, { method: "POST", body: formData });
+        }, "image/jpeg");
     }
 
-    // Update text every second
     function updateSentence() {
-      fetch('/get_sentence')
-        .then(response => response.text())
-        .then(data => {
-          const words = data.split('*');
-          if (words.length !== wordcount) {
-            for (let i = wordcount; i < words.length; i++) {
-              const p = document.createElement('p');
-              p.textContent = words[i];
-              text.insertBefore(p, text.firstChild);
-            }
-            wordcount = words.length;
-          }
-        });
+        fetch(`${API_URL}/get_sentence`)
+            .then(response => response.text())
+            .then(data => {
+                const words = data.split('*');
+                if (words.length !== wordcount) {
+                    for (let i = wordcount; i < words.length; i++) {
+                        const p = document.createElement('p');
+                        p.textContent = words[i];
+                        text.insertBefore(p, text.firstChild);
+                    }
+                    wordcount = words.length;
+                }
+            });
     }
+
     setInterval(updateSentence, 1000);
 
-    // Clear text button
     clearText_button.addEventListener('click', () => {
-      fetch('/clear_sentence', { method: 'POST' })
-        .then(() => {
-          text.replaceChildren();
-          wordcount = 0;
-        });
+        fetch(`${API_URL}/clear_sentence`, { method: 'POST' })
+            .then(() => {
+                text.replaceChildren();
+                wordcount = 0;
+            });
     });
-
-
-      
 </script>
- 
 {% endblock javascripts %}

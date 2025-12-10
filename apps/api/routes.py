@@ -130,67 +130,63 @@
 #                }, 200
 
 import os
-import cv2
+import base64
 import numpy as np
-from flask import request
-from flask_restx import Api, Resource
+from flask import request, jsonify
+from flask import current_app as app
+from keras.models import load_model
+from PIL import Image
+import io
 
 from apps.api import blueprint
-from keras.models import load_model
-import mediapipe as mp
 
-api = Api(blueprint)
+# Load trained model once at startup
+MODEL_PATH = os.path.join('model', 'prototype_weight_final.h5')
+# model = load_model(MODEL_PATH)
+model = load_model(MODEL_PATH, compile=False)
 
-# Load model
-model = load_model(os.path.join('new_models', 'RSL Action Detection Script_phase3.h5'))
 
-actions = np.array(['hello', 'thanks', 'yes', 'no', 'help'])
-sequence_length = 30
+# Simple sentence buffer
+sentence = ""
 
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
+@blueprint.route('/receive_frame', methods=['POST'])
+def receive_frame():
+    global sentence
 
-# Buffer of frames for sequence input
-sequence = []
+    # Get image blob
+    file = request.files.get("frame")
+    if not file:
+        return jsonify({"success": False, "message": "No frame received"}), 400
 
-@api.route('/predict/', methods=['POST'])
-class PredictRoute(Resource):
-    def post(self):
-        global sequence
+    # Convert to model input
+    img = Image.open(file.stream).convert('RGB')
+    img = img.resize((224, 224))
+    img = np.array(img) / 255.0
+    img = np.expand_dims(img, axis=0)
 
-        if 'frame' not in request.files:
-            return { "error": "No frame sent" }, 400
+    # Predict with model
+    prediction = model.predict(img)
+    predicted_class = np.argmax(prediction)
 
-        file = request.files['frame']
-        file_bytes = np.frombuffer(file.read(), np.uint8)
-        frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    # Dummy label mapping — update to your real labels
+    labels = ["a", "b", "c", "d", "e"]  
+    word = labels[predicted_class]
 
-        # Extract Hand Keypoints
-        with mp_hands.Hands(max_num_hands=1) as hands:
-            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = hands.process(image_rgb)
+    # Append to global text buffer
+    global sentence
+    sentence += word + "*"
 
-            keypoints = []
-            if results.multi_hand_landmarks:
-                for lm in results.multi_hand_landmarks:
-                    for p in lm.landmark:
-                        keypoints.extend([p.x, p.y, p.z])
-            else:
-                keypoints = [0] * (21 * 3)
+    return jsonify({"success": True}), 200
 
-            sequence.append(keypoints)
 
-        # Keep only last 30 frames
-        sequence = sequence[-sequence_length:]
+@blueprint.route('/get_sentence', methods=['GET'])
+def get_sentence():
+    global sentence
+    return sentence, 200
 
-        if len(sequence) < sequence_length:
-            return { "word": "", "confidence": 0 }
 
-        X_input = np.expand_dims(sequence, axis=0)
-        res = model.predict(X_input)[0]
-        predicted = actions[np.argmax(res)]
-
-        return {
-            "word": predicted,
-            "confidence": float(np.max(res))
-        }
+@blueprint.route('/clear_sentence', methods=['POST'])
+def clear_sentence():
+    global sentence
+    sentence = ""
+    return jsonify({"success": True}), 200
